@@ -18,8 +18,8 @@ logging.basicConfig(level=logging.INFO)
 #                        НАСТРОЙКИ
 # ══════════════════════════════════════════════════════════
 
-BOT_TOKEN      = "ВСТАВЬТЕ_ВАШ_ТОКЕН_СЮДА"
-ADMIN_CHAT_ID  = 0
+BOT_TOKEN      = "8731975018:AAGoek-E4YgnW8EV7P_eSwgImLGzxNT2RVA"
+ADMIN_CHAT_ID  = 6584619457
 ADMIN_TG       = "@rmnshin"
 PHONE1         = "010-3247-4734"
 PHONE2         = "032-817-4734"

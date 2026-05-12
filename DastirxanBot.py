@@ -18,8 +18,8 @@ logging.basicConfig(level=logging.INFO)
 #                        НАСТРОЙКИ
 # ══════════════════════════════════════════════════════════
 
-BOT_TOKEN      = "8731975018:AAGoek-E4YgnW8EV7P_eSwgImLGzxNT2RVA"
-ADMIN_CHAT_ID  = 6584619457
+BOT_TOKEN      = "ВСТАВЬТЕ_ВАШ_ТОКЕН_СЮДА"
+ADMIN_CHAT_ID  = 0
 ADMIN_TG       = "@rmnshin"
 PHONE1         = "010-3247-4734"
 PHONE2         = "032-817-4734"
@@ -495,15 +495,28 @@ def items_kb(context, cat_id):
     for i, item in enumerate(cat["items"]):
         key = f"{cat_id}_{i}"
         qty = cart.get(key, 0)
-        label = f"{item[l]} ₩{item['price']:,}" + (f" ✅{qty}" if qty else "")
+        qty_label = f"  ✅ {qty}" if qty else ""
         rows.append([
             InlineKeyboardButton("➖", callback_data=f"rm_{cat_id}_{i}"),
-            InlineKeyboardButton(label, callback_data="x"),
-            InlineKeyboardButton("➕", callback_data=f"ad_{cat_id}_{i}"),
+            InlineKeyboardButton(f"➕ добавить{qty_label}", callback_data=f"ad_{cat_id}_{i}"),
         ])
     rows.append([InlineKeyboardButton(t(context, "back"), callback_data="menu")])
     rows.append([InlineKeyboardButton("🛒", callback_data="cart")])
     return InlineKeyboardMarkup(rows)
+
+def items_text(context, cat_id):
+    """Формирует текст со списком блюд и ценами."""
+    l = lang(context)
+    cart = get_cart(context)
+    cat = get_cat(cat_id)
+    lines = [f"*{cat[l]}*\n"]
+    for i, item in enumerate(cat["items"]):
+        key = f"{cat_id}_{i}"
+        qty = cart.get(key, 0)
+        qty_str = f" ✅{qty}" if qty else ""
+        lines.append(f"{i+1}. {item[l]} — ₩{item['price']:,}{qty_str}")
+    lines.append(f"\n{t(context, 'add_to_cart')}")
+    return "\n".join(lines)
 
 def cart_kb(context):
     cart = get_cart(context)
@@ -548,13 +561,12 @@ async def btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif d.startswith("cat_"):
         cat_id = d[4:]
-        cat = get_cat(cat_id)
-        l = lang(context)
         await q.edit_message_text(
-            f"*{cat[l]}*\n\n{t(context, 'add_to_cart')}",
+            items_text(context, cat_id),
             parse_mode="Markdown",
             reply_markup=items_kb(context, cat_id)
         )
+        context.user_data["current_cat"] = cat_id
 
     elif d.startswith("ad_"):
         parts = d[3:].rsplit("_", 1)
@@ -562,7 +574,11 @@ async def btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
         key = f"{cat_id}_{idx}"
         cart = get_cart(context)
         cart[key] = cart.get(key, 0) + 1
-        await q.edit_message_reply_markup(reply_markup=items_kb(context, cat_id))
+        await q.edit_message_text(
+            items_text(context, cat_id),
+            parse_mode="Markdown",
+            reply_markup=items_kb(context, cat_id)
+        )
 
     elif d.startswith("rm_"):
         parts = d[3:].rsplit("_", 1)
@@ -573,7 +589,11 @@ async def btn(update: Update, context: ContextTypes.DEFAULT_TYPE):
             cart[key] -= 1
             if cart[key] == 0:
                 del cart[key]
-        await q.edit_message_reply_markup(reply_markup=items_kb(context, cat_id))
+        await q.edit_message_text(
+            items_text(context, cat_id),
+            parse_mode="Markdown",
+            reply_markup=items_kb(context, cat_id)
+        )
 
     elif d == "cart":
         await q.edit_message_text(cart_summary(get_cart(context), context), parse_mode="Markdown", reply_markup=cart_kb(context))
